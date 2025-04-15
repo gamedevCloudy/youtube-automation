@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  downloader:
+    build: ./downloader
+    container_name: youtube-downloader
+    volumes:
+      - ${PWD}/.env:/app/.env
+    environment:
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - BUCKET=${BUCKET}
+    networks:
+      - youtube-chatbot-network
+
+  transcriber:
+    build: ./transcriber
+    container_name: youtube-transcriber
+    volumes:
+      - ${PWD}/.env:/app/.env
+    environment:
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - BUCKET=${BUCKET}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+    networks:
+      - youtube-chatbot-network
+    depends_on:
+      - downloader
+
+  vectordb:
+    build: ./vectordb
+    container_name: youtube-vectordb
+    volumes:
+      - ${PWD}/.env:/app/.env
+      - chroma_data:/app/data
+    environment:
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - BUCKET=${BUCKET}
+    networks:
+      - youtube-chatbot-network
+    depends_on:
+      - transcriber
+
+  chatbot:
+    build: ./chatbot
+    container_name: youtube-chatbot
+    volumes:
+      - ${PWD}/.env:/app/.env
+    environment:
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - BUCKET=${BUCKET}
+    networks:
+      - youtube-chatbot-network
+    depends_on:
+      - vectordb
+
+  api:
+    build: ./api
+    container_name: youtube-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ${PWD}/.env:/app/.env
+    environment:
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - BUCKET=${BUCKET}
+    networks:
+      - youtube-chatbot-network
+    depends_on:
+      - downloader
+      - transcriber
+      - vectordb
+      - chatbot
+
+networks:
+  youtube-chatbot-network:
+    driver: bridge
+
+volumes:
+  chroma_data:
