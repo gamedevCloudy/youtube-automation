@@ -33,19 +33,22 @@ async def download_audio(
             output_dir = tempfile.mkdtemp()
         os.makedirs(output_dir, exist_ok=True)
         
+        # Convert HttpUrl to string
+        url_str = str(url)
+        
         # Extract video ID and create a filename
-        video_id = str(url).split("v=")[-1].split("&")[0]
+        video_id = url_str.split("v=")[-1].split("&")[0]
         output_file = os.path.join(output_dir, f"{video_id}.{audio_format}")
         
         # Download audio using pytubefix
-        yt = pytubefix.YouTube(url)
+        yt = pytubefix.YouTube(url_str)
         audio_stream = yt.streams.filter(only_audio=True).first()
         
         if not audio_stream:
-            raise ValueError(f"No audio stream found for {url}")
+            raise ValueError(f"No audio stream found for {url_str}")
         
         # Download the audio
-        logger.info(f"Downloading audio from {url}")
+        logger.info(f"Downloading audio from {url_str}")
         audio_path = audio_stream.download(output_path=output_dir, filename=f"{video_id}.{audio_format}")
         logger.info(f"Downloaded audio to {audio_path}")
         
@@ -66,7 +69,10 @@ async def get_video_metadata(url: HttpUrl) -> Dict[str, Any]:
         Dict: Video metadata
     """
     try:
-        yt = pytubefix.YouTube(url)
+        # Convert HttpUrl to string
+        url_str = str(url)
+        
+        yt = pytubefix.YouTube(url_str)
         
         return {
             "title": yt.title,
