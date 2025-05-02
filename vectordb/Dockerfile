@@ -11,14 +11,15 @@ COPY pyproject.toml poetry.lock* /app/
 # Configure poetry to not create a virtual environment
 RUN poetry config virtualenvs.create false
 
-# Install dependencies
-RUN poetry install --no-dev
+# Install dependencies (without dev dependencies)
+RUN poetry install --without dev
 
 # Copy the application code
 COPY src/ /app/src/
 
-# Create data directory for ChromaDB
-RUN mkdir -p /app/data
+# Create data directory for ChromaDB and ensure proper permissions
+RUN mkdir -p /app/data && \
+    chmod 777 /app/data
 
 # Run the application
 CMD ["python", "-m", "vectordb.main"]
