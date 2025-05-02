@@ -157,3 +157,5 @@ cython_debug/
 /db
 
 .keys
+
+vectordb/docs
